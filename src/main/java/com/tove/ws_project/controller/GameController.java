@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Mono;
 
 import java.util.List;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/games")
@@ -44,6 +45,20 @@ public class GameController {
 
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
+    }
+
+    @DeleteMapping(("/deleteGame/{id}"))
+    public ResponseEntity<Void> deleteGame(@PathVariable("id") Long id) {
+
+        Optional<Game> game = gameRepository.findById(id);
+
+        if (game.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        }
+        gameRepository.deleteById(id);
+        return ResponseEntity.noContent().build();
+
+
     }
 
 
