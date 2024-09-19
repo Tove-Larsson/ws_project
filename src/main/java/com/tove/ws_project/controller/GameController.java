@@ -1,15 +1,13 @@
 package com.tove.ws_project.controller;
 
+import com.tove.ws_project.model.Game;
 import com.tove.ws_project.model.GameApi;
 import com.tove.ws_project.repository.GameRepository;
 import com.tove.ws_project.service.ApiService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Mono;
 
 import java.util.List;
@@ -34,6 +32,18 @@ public class GameController {
                 .onErrorResume(error -> Mono.just(
                         ResponseEntity.status(HttpStatus.NO_CONTENT).build()
                 ));
+    }
+
+    @PostMapping("/db/addgames")
+    public ResponseEntity<List<Game>> addGames(@RequestBody List<Game> games) {
+        try {
+            List<Game> savedGames = gameRepository.saveAll(games);
+            return ResponseEntity.status(HttpStatus.CREATED).body(savedGames);
+        } catch (Exception e) {
+            System.err.println("Error creating game: " + e.getMessage());
+
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
     }
 
 
