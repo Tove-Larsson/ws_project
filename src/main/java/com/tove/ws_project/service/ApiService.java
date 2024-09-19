@@ -44,6 +44,27 @@ public class ApiService {
 
     }
 
+    public Mono<GameApi> getGame(Long id) {
+        String url = "https://api.igdb.com/v4/games";
+
+        String requestBody = String.format("fields *; where id = %d", id);
+
+        return webClient.post()
+                .uri(url)
+                .header("Client-ID", apiCredentials.getClientId())
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + apiCredentials.getAccessToken())
+                .header(HttpHeaders.CONTENT_TYPE, "application/json")
+                .bodyValue(requestBody)
+                .retrieve()
+                .onStatus(HttpStatusCode::is4xxClientError, clientResponse ->
+                        Mono.error(new RuntimeException("Client Error: " + clientResponse.statusCode()))
+                )
+                .onStatus(HttpStatusCode::is5xxServerError, clientResponse ->
+                        Mono.error(new RuntimeException("Server Error: " + clientResponse.statusCode()))
+                )
+                .bodyToMono(GameApi.class);
+    }
+
 
 
 }
