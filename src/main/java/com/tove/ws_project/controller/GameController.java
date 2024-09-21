@@ -35,32 +35,4 @@ public class GameController {
                 ));
     }
 
-    @PostMapping("/db/addgames")
-    public ResponseEntity<List<Game>> addGames(@RequestBody List<Game> games) {
-        try {
-            List<Game> savedGames = gameRepository.saveAll(games);
-            return ResponseEntity.status(HttpStatus.CREATED).body(savedGames);
-        } catch (Exception e) {
-            System.err.println("Error creating game: " + e.getMessage());
-
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-        }
-    }
-
-    @DeleteMapping(("/deleteGame/{id}"))
-    public ResponseEntity<Void> deleteGame(@PathVariable("id") Long id) {
-
-        Optional<Game> game = gameRepository.findById(id);
-
-        if (game.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
-        }
-        gameRepository.deleteById(id);
-        return ResponseEntity.noContent().build();
-
-
-    }
-
-
-
 }
