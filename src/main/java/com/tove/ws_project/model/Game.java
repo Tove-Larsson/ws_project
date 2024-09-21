@@ -1,5 +1,6 @@
 package com.tove.ws_project.model;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 
@@ -9,6 +10,7 @@ public class Game {
     @Id
     private Long id;
     private String name;
+    @Column(columnDefinition="TEXT")
     private String storyline;
     private double rating;
 
@@ -24,6 +26,10 @@ public class Game {
 
     public Long getId() {
         return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
     }
 
     public String getName() {

@@ -3,6 +3,7 @@ package com.tove.ws_project.service;
 import com.tove.ws_project.config.ApiCredentials;
 import com.tove.ws_project.model.GameApi;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.stereotype.Service;
@@ -47,8 +48,7 @@ public class ApiService {
     public Mono<GameApi> getGame(Long id) {
         String url = "https://api.igdb.com/v4/games";
 
-        String requestBody = String.format("fields *; where id = %d", id);
-
+        String requestBody = String.format("fields *; where id = %d;", id);
         return webClient.post()
                 .uri(url)
                 .header("Client-ID", apiCredentials.getClientId())
@@ -62,7 +62,14 @@ public class ApiService {
                 .onStatus(HttpStatusCode::is5xxServerError, clientResponse ->
                         Mono.error(new RuntimeException("Server Error: " + clientResponse.statusCode()))
                 )
-                .bodyToMono(GameApi.class);
+                .bodyToMono(new ParameterizedTypeReference<List<GameApi>>() {})
+                .flatMap(games -> {
+                    if (games != null && !games.isEmpty()) {
+                        return Mono.just(games.get(0));
+                    } else {
+                        return Mono.error(new RuntimeException("No games found"));
+                    }
+                });
     }
 
 

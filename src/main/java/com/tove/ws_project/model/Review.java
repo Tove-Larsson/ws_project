@@ -20,6 +20,11 @@ public class Review {
     public Review() {
     }
 
+    public Review(String title, String content) {
+        this.title = title;
+        this.content = content;
+    }
+
     public Review(UUID id, String title, String content, Game game) {
         this.id = id;
         this.title = title;

@@ -38,4 +38,14 @@ public class GameApi {
     public void setRating(double rating) {
         this.rating = rating;
     }
+
+    public Game toGame() {
+        Game game = new Game();
+        game.setId((long) this.id);
+        game.setName(this.name);
+        game.setStoryline(this.storyline);
+        game.setRating(this.rating);
+
+        return game;
+    }
 }
