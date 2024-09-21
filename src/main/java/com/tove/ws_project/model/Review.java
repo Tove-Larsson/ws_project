@@ -1,6 +1,9 @@
 package com.tove.ws_project.model;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
+
 import java.util.UUID;
 
 @Entity
@@ -10,7 +13,14 @@ public class Review {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
+
+    @NotBlank(message = "Title cannot be empty")
+    @Size(min = 1, max = 50, message = "Title must be between 1 and 50 characters")
     private String title;
+
+    @NotBlank(message = "Content cannot be empty")
+    @Size(min = 1, message = "Content must be at least 1 character")
+    @Column(columnDefinition="TEXT")
     private String content;
 
     @ManyToOne

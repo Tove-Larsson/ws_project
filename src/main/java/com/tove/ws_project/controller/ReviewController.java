@@ -3,15 +3,13 @@ package com.tove.ws_project.controller;
 import com.tove.ws_project.model.Review;
 import com.tove.ws_project.repository.ReviewRepository;
 import com.tove.ws_project.service.ReviewService;
-import org.apache.coyote.Response;
+import jakarta.validation.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/reviews")
@@ -27,16 +25,33 @@ public class ReviewController {
     }
 
     @PostMapping("/create")
-    public ResponseEntity<Review> createReview(@RequestBody Map<String, Object> requestBody) {
+    public ResponseEntity<Object> createReview(@RequestBody Map<String, Object> requestBody) {
 
         Integer gameId = (Integer) requestBody.get("gameId");
-
         String title = (String) requestBody.get("title");
         String content = (String) requestBody.get("content");
+
         Review review = new Review(title, content);
 
-        review = reviewService.saveReview(review, gameId);
-        return ResponseEntity.status(201).body(review);
+        try (ValidatorFactory factory = Validation.buildDefaultValidatorFactory()) {
+            Validator validator = factory.getValidator();
+
+            Set<ConstraintViolation<Review>> violations = validator.validate(review);
+            if (!violations.isEmpty()) {
+                List<String> errorMessages = violations.stream()
+                        .map(violation -> violation.getPropertyPath() + ": " + violation.getMessage())
+                        .collect(Collectors.toList());
+                Map<String, Object> responseBody = new HashMap<>();
+                responseBody.put("status", 400);
+                responseBody.put("errors", errorMessages);
+                return ResponseEntity.badRequest().body(responseBody);
+            }
+
+            review = reviewService.saveReview(review, gameId);
+            return ResponseEntity.status(201).body(review);
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("An error occurred while saving the review.");
+        }
     }
 
     @DeleteMapping("/delete/{id}")
