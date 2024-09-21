@@ -27,7 +27,7 @@ public class ReviewController {
     }
 
     @PostMapping("/create")
-    public Review createReview(@RequestBody Map<String, Object> requestBody) {
+    public ResponseEntity<Review> createReview(@RequestBody Map<String, Object> requestBody) {
 
         Integer gameId = (Integer) requestBody.get("gameId");
 
@@ -35,7 +35,8 @@ public class ReviewController {
         String content = (String) requestBody.get("content");
         Review review = new Review(title, content);
 
-        return reviewService.saveReview(review, gameId);
+        review = reviewService.saveReview(review, gameId);
+        return ResponseEntity.status(201).body(review);
     }
 
     @DeleteMapping("/delete/{id}")
