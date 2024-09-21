@@ -6,7 +6,10 @@ import com.tove.ws_project.model.Review;
 import com.tove.ws_project.repository.GameRepository;
 import com.tove.ws_project.repository.ReviewRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
+
 import java.util.Optional;
 
 @Service
@@ -30,13 +33,16 @@ public class ReviewService {
         if (gameOptional.isPresent()) {
             Game game = gameOptional.get();
             review.setGame(game);
-            return reviewRepository.save(review);
         } else {
-            GameApi gameApi = apiService.getGame(gameId).block();
-            Game game = gameRepository.save(gameApi.toGame());
-            review.setGame(game);
-            return reviewRepository.save(review);
+            try {
+                GameApi gameApi = apiService.getGame(gameId).block();
+                Game game = gameRepository.save(gameApi.toGame());
+                review.setGame(game);
+            } catch (RuntimeException e) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Game not found or external API error.");
+            }
 
         }
+        return reviewRepository.save(review);
     }
 }
