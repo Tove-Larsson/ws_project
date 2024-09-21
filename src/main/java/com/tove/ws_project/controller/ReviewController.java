@@ -66,12 +66,20 @@ public class ReviewController {
         return ResponseEntity.notFound().build();
     }
 
-    @GetMapping("/{gameId}")
+    @GetMapping("/findall/{gameId}")
     public ResponseEntity<List<Review>> getReviewsByGameId(@PathVariable("gameId") Integer gameId) {
 
         Optional<List<Review>> reviews = reviewRepository.findByGame_Id(gameId);
 
         return reviews.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<Review> getReviewById(@PathVariable("id") UUID id) {
+
+        Optional<Review> review = reviewRepository.findById(id);
+
+        return review.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
     }
 
 }
