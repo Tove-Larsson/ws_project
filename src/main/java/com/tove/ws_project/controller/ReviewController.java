@@ -3,10 +3,12 @@ package com.tove.ws_project.controller;
 import com.tove.ws_project.model.Review;
 import com.tove.ws_project.repository.ReviewRepository;
 import com.tove.ws_project.service.ReviewService;
+import org.apache.coyote.Response;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -62,6 +64,14 @@ public class ReviewController {
         }
 
         return ResponseEntity.notFound().build();
+    }
+
+    @GetMapping("/{gameId}")
+    public ResponseEntity<List<Review>> getReviewsByGameId(@PathVariable("gameId") Integer gameId) {
+
+        Optional<List<Review>> reviews = reviewRepository.findByGame_Id(gameId);
+
+        return reviews.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
     }
 
 }
