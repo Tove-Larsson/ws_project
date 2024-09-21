@@ -48,4 +48,20 @@ public class ReviewController {
         return ResponseEntity.notFound().build();
     }
 
+    @PutMapping("/update/{id}")
+    public ResponseEntity<Review> updateReview(@PathVariable("id") UUID id, @RequestBody Map<String, Object> requestBody) {
+
+        Optional<Review> review = reviewRepository.findById(id);
+
+        if (review.isPresent()) {
+            Review existingReview = review.get();
+            review.get().setTitle((String) requestBody.get("title"));
+            review.get().setContent((String) requestBody.get("content"));
+            reviewRepository.saveAndFlush(review.get());
+            return ResponseEntity.ok(existingReview);
+        }
+
+        return ResponseEntity.notFound().build();
+    }
+
 }
