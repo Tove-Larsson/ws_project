@@ -27,8 +27,10 @@ public class GameController {
     }
 
     @GetMapping("/search/{title}")
-    public Mono<ResponseEntity<List<GameApi>>> getGames(@PathVariable("title") String title) {
-        return apiService.getGames(title)
+    public Mono<ResponseEntity<List<GameApi>>> getGames(@PathVariable("title") String title,
+            @RequestParam (required = false) String maxDate,
+            @RequestParam (required = false) String minDate){
+        return apiService.getGames(title, minDate, maxDate)
                 .map(ResponseEntity::ok)
                 .onErrorResume(error -> Mono.just(
                         ResponseEntity.status(HttpStatus.NO_CONTENT).build()

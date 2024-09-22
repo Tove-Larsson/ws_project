@@ -10,6 +10,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
+import java.time.LocalDate;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 @Service
@@ -24,10 +27,35 @@ public class ApiService {
         this.webClient = webClientBuilder.build();
     }
 
-    public Mono<List<GameApi>> getGames(String title) {
+    private long parseDateToTimestamp(String dateStr) {
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+        LocalDate date = LocalDate.parse(dateStr, formatter);
+        return date.atStartOfDay(ZoneOffset.UTC).toEpochSecond();
+    }
+
+    public Mono<List<GameApi>> getGames(String title, String minDate, String maxDate) {
         String url = "https://api.igdb.com/v4/games/";
 
-        String requestBody = String.format("fields *; limit 100; where category = 0; search \"%s\";",title);
+        StringBuilder requestBodyBuilder = new StringBuilder("fields *; limit 100; ");
+
+        requestBodyBuilder.append("search \"").append(title).append("\"; ");
+
+        requestBodyBuilder.append("where category = 0");
+
+        if (minDate != null && !minDate.isEmpty()) {
+            System.out.println(parseDateToTimestamp(minDate));
+            requestBodyBuilder.append(" & first_release_date >= ").append(parseDateToTimestamp(minDate));
+        }
+        if (maxDate != null && !maxDate.isEmpty()) {
+            System.out.println(parseDateToTimestamp(maxDate));
+            requestBodyBuilder.append(" & first_release_date <= ").append(parseDateToTimestamp(maxDate));
+        }
+
+        requestBodyBuilder.append(";");
+
+        System.out.println(requestBodyBuilder);
+
+        String requestBody = requestBodyBuilder.toString();
 
         return webClient.post()
                 .uri(url)
