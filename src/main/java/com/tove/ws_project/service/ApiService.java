@@ -13,6 +13,7 @@ import reactor.core.publisher.Mono;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.List;
 
 @Service
@@ -28,12 +29,13 @@ public class ApiService {
     }
 
     private long parseDateToTimestamp(String dateStr) {
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-        LocalDate date = LocalDate.parse(dateStr, formatter);
-        return date.atStartOfDay(ZoneOffset.UTC).toEpochSecond();
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+            LocalDate date = LocalDate.parse(dateStr, formatter);
+            return date.atStartOfDay(ZoneOffset.UTC).toEpochSecond();
     }
 
     public Mono<List<GameApi>> getGames(String title, String minDate, String maxDate) {
+
         String url = "https://api.igdb.com/v4/games/";
 
         StringBuilder requestBodyBuilder = new StringBuilder("fields *; limit 100; ");
@@ -41,14 +43,15 @@ public class ApiService {
         requestBodyBuilder.append("search \"").append(title).append("\"; ");
 
         requestBodyBuilder.append("where category = 0");
-
-        if (minDate != null && !minDate.isEmpty()) {
-            System.out.println(parseDateToTimestamp(minDate));
-            requestBodyBuilder.append(" & first_release_date >= ").append(parseDateToTimestamp(minDate));
-        }
-        if (maxDate != null && !maxDate.isEmpty()) {
-            System.out.println(parseDateToTimestamp(maxDate));
-            requestBodyBuilder.append(" & first_release_date <= ").append(parseDateToTimestamp(maxDate));
+        try {
+            if (minDate != null && !minDate.isEmpty()) {
+                requestBodyBuilder.append(" & first_release_date >= ").append(parseDateToTimestamp(minDate));
+            }
+            if (maxDate != null && !maxDate.isEmpty()) {
+                requestBodyBuilder.append(" & first_release_date <= ").append(parseDateToTimestamp(maxDate));
+            }
+        } catch (DateTimeParseException e) {
+            return Mono.error(e);
         }
 
         requestBodyBuilder.append(";");
