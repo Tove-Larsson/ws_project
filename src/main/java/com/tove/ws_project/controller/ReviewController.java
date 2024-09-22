@@ -1,12 +1,15 @@
 package com.tove.ws_project.controller;
 
+import com.tove.ws_project.model.Game;
 import com.tove.ws_project.model.Review;
+import com.tove.ws_project.repository.GameRepository;
 import com.tove.ws_project.repository.ReviewRepository;
 import com.tove.ws_project.service.ReviewService;
 import jakarta.validation.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -17,11 +20,13 @@ public class ReviewController {
 
     private final ReviewService reviewService;
     private final ReviewRepository reviewRepository;
+    private final GameRepository gameRepository;
 
     @Autowired
-    public ReviewController(ReviewService reviewService, ReviewRepository reviewRepository) {
+    public ReviewController(ReviewService reviewService, ReviewRepository reviewRepository, GameRepository gameRepository) {
         this.reviewService = reviewService;
         this.reviewRepository = reviewRepository;
+        this.gameRepository = gameRepository;
     }
 
     @PostMapping("/create")
@@ -37,11 +42,11 @@ public class ReviewController {
                 return ResponseEntity.badRequest().body(responseBody);
             }
 
-        Integer gameId = (Integer) requestBody.get("gameId");
-        String title = (String) requestBody.get("title");
-        String content = (String) requestBody.get("content");
+            Integer gameId = (Integer) requestBody.get("gameId");
+            String title = (String) requestBody.get("title");
+            String content = (String) requestBody.get("content");
 
-        Review review = new Review(title, content);
+            Review review = new Review(title, content);
 
             Validator validator = factory.getValidator();
 
@@ -58,9 +63,8 @@ public class ReviewController {
 
             review = reviewService.saveReview(review, gameId);
             return ResponseEntity.status(201).body(review);
-        } catch (Exception e) {
-            return ResponseEntity.status(500).body(e.getMessage());
-            // "An error occurred while saving the review."
+        } catch (ResponseStatusException e) {
+            return ResponseEntity.status(e.getStatusCode()).body(e.getMessage());
         }
     }
 
@@ -77,27 +81,50 @@ public class ReviewController {
     }
 
     @PutMapping("/update/{id}")
-    public ResponseEntity<Review> updateReview(@PathVariable("id") UUID id, @RequestBody Map<String, Object> requestBody) {
+    public ResponseEntity<Object> updateReview(@PathVariable("id") UUID id, @RequestBody Map<String, Object> requestBody) {
 
-        Optional<Review> review = reviewRepository.findById(id);
+        try (ValidatorFactory factory = Validation.buildDefaultValidatorFactory()) {
 
-        if (review.isPresent()) {
-            Review existingReview = review.get();
-            review.get().setTitle((String) requestBody.get("title"));
-            review.get().setContent((String) requestBody.get("content"));
-            reviewRepository.saveAndFlush(review.get());
-            return ResponseEntity.ok(existingReview);
+            Optional<Review> optionalReview = reviewRepository.findById(id);
+
+            if (optionalReview.isPresent()) {
+                Review review = optionalReview.get();
+                review.setTitle((String) requestBody.get("title"));
+                review.setContent((String) requestBody.get("content"));
+                Validator validator = factory.getValidator();
+
+                Set<ConstraintViolation<Review>> violations = validator.validate(review);
+                if (!violations.isEmpty()) {
+                    List<String> errorMessages = violations.stream()
+                            .map(violation -> violation.getPropertyPath() + ": " + violation.getMessage())
+                            .collect(Collectors.toList());
+                    Map<String, Object> responseBody = new HashMap<>();
+                    responseBody.put("status", 400);
+                    responseBody.put("errors", errorMessages);
+                    return ResponseEntity.badRequest().body(responseBody);
+                }
+                reviewRepository.saveAndFlush(review);
+                return ResponseEntity.ok(review);
+            }
+
+            return ResponseEntity.notFound().build();
+        } catch (ResponseStatusException e) {
+            return ResponseEntity.status(e.getStatusCode()).body(e.getMessage());
         }
-
-        return ResponseEntity.notFound().build();
     }
 
     @GetMapping("/findall/{gameId}")
-    public ResponseEntity<List<Review>> getReviewsByGameId(@PathVariable("gameId") Integer gameId) {
+    public ResponseEntity<List<Review>> getReviewsByGameId(@PathVariable("gameId") Long gameId) {
+
+        Optional<Game> game = gameRepository.findById(gameId);
+
+        if (game.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
 
         Optional<List<Review>> reviews = reviewRepository.findByGame_Id(gameId);
 
-        return reviews.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
+        return reviews.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.ok(Collections.emptyList()));
     }
 
     @GetMapping("/{id}")
@@ -105,7 +132,10 @@ public class ReviewController {
 
         Optional<Review> review = reviewRepository.findById(id);
 
-        return review.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
+        return review.map(ResponseEntity::ok)
+                .orElseGet(() -> review.map(ResponseEntity::ok)
+                        .orElseGet(() -> ResponseEntity.notFound().build()));
+
     }
 
 }
