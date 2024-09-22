@@ -27,13 +27,22 @@ public class ReviewController {
     @PostMapping("/create")
     public ResponseEntity<Object> createReview(@RequestBody Map<String, Object> requestBody) {
 
+        try (ValidatorFactory factory = Validation.buildDefaultValidatorFactory()) {
+
+            Object gameIdObj = requestBody.get("gameId");
+            if (!(gameIdObj instanceof Integer) || (Integer)gameIdObj < 0) {
+                Map<String, Object> responseBody = new HashMap<>();
+                responseBody.put("status", 400);
+                responseBody.put("errors", List.of("gameId: must be a valid signed integer."));
+                return ResponseEntity.badRequest().body(responseBody);
+            }
+
         Integer gameId = (Integer) requestBody.get("gameId");
         String title = (String) requestBody.get("title");
         String content = (String) requestBody.get("content");
 
         Review review = new Review(title, content);
 
-        try (ValidatorFactory factory = Validation.buildDefaultValidatorFactory()) {
             Validator validator = factory.getValidator();
 
             Set<ConstraintViolation<Review>> violations = validator.validate(review);
@@ -50,7 +59,8 @@ public class ReviewController {
             review = reviewService.saveReview(review, gameId);
             return ResponseEntity.status(201).body(review);
         } catch (Exception e) {
-            return ResponseEntity.status(500).body("An error occurred while saving the review.");
+            return ResponseEntity.status(500).body(e.getMessage());
+            // "An error occurred while saving the review."
         }
     }
 
@@ -61,7 +71,7 @@ public class ReviewController {
 
         if (review.isPresent()) {
             reviewRepository.deleteById(id);
-            return ResponseEntity.ok().build();
+            return ResponseEntity.noContent().build();
         }
         return ResponseEntity.notFound().build();
     }
