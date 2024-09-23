@@ -40,7 +40,6 @@ public class ReviewService {
                 Game game = gameRepository.save(gameApi.toGame());
                 review.setGame(game);
             } catch (RuntimeException e) {
-                // TODO - fix so catch can throw other HTTP STATUSES
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Game not found or external API error.");
             }
 
