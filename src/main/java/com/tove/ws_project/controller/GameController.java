@@ -3,7 +3,6 @@ package com.tove.ws_project.controller;
 import com.tove.ws_project.exception.BadRequestException;
 import com.tove.ws_project.exception.InternalServerException;
 import com.tove.ws_project.model.GameApi;
-import com.tove.ws_project.repository.GameRepository;
 import com.tove.ws_project.service.ApiService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -18,7 +17,7 @@ public class GameController {
 
     private final ApiService apiService;
     @Autowired
-    public GameController(ApiService apiService, GameRepository gameRepository) {
+    public GameController(ApiService apiService) {
         this.apiService = apiService;
     }
 
